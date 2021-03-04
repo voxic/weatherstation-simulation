@@ -5,7 +5,6 @@
 # * Contact: emil.nilsson@nutanix.com
 #
 
-
 ## Imports
 import sys
 import ssl
@@ -15,10 +14,17 @@ import logging, traceback
 import paho.mqtt.client as mqtt
 import random
 import json
+import math
 
 
 # Set this to the IP of your service domain
 service_domain_ip = "10.0.0.18"
+
+# Set device name
+device_name = "dev002"
+
+# Set MQTT topic, this need to be the same that Data sources is pointing to.
+topic = "weather/data"
 
 # Download certificates from your service domain. This is done under Data sources and IoT Sensors at https://karbon.nutanix.com
 # Place the certificates in the same folder as the script
@@ -56,8 +62,6 @@ def ssl_alpn():
         raise e
 
 if __name__ == '__main__':
-    # Set MQTT topic, this need to be the same that Data sources is pointing to.
-    topic = "weather/data"
 
     # Connect to Service domain MQTT
     try:
@@ -71,11 +75,11 @@ if __name__ == '__main__':
 
         # Main Loop
         while True:
-            
+            ts = round(time.time()*1000)
             # Generate Temperature values
             new_temp = last_temp + (random.randint(-20, 20) / 100)
             new_temp = round(new_temp, 1)
-            newPayload = {"measurement" : "temperature","value" : str(new_temp)}
+            newPayload = {"device" : device_name, "ts" : ts, "measurement" : "temperature","value" : str(new_temp)}
             mqttc.publish(topic, json.dumps(newPayload)) # Publish to broker
             logger.info("try to publish:{}".format(newPayload))
 
@@ -84,7 +88,7 @@ if __name__ == '__main__':
             new_wind = round(new_wind, 2)
             if(new_wind < 0):
                 new_wind = 0.00
-            newPayload = {"measurement" : "wind","value" : str(new_wind)}
+            newPayload = {"device" : device_name, "ts" : ts, "measurement" : "wind","value" : str(new_wind)}
             mqttc.publish(topic, json.dumps(newPayload)) # Publish to broker
             logger.info("try to publish:{}".format(newPayload))
 
@@ -94,7 +98,7 @@ if __name__ == '__main__':
             if(new_rain < 0):
                 new_rain = 0.00
             if(new_rain > 1.0):
-                newPayload = {"measurement" : "rain","value" : str(new_rain)}
+                newPayload = {"device" : device_name, "ts" : ts, "measurement" : "rain","value" : str(new_rain)}
                 mqttc.publish(topic, json.dumps(newPayload))
                 logger.info("try to publish:{}".format(newPayload))            
 
